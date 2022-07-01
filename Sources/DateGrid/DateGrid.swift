@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+public enum Axis {
+    case vertical
+    case horizontal
+}
 public struct DateGrid<DateView>: View where DateView: View {
     
     /// DateStack view
@@ -14,25 +18,36 @@ public struct DateGrid<DateView>: View where DateView: View {
     ///   - interval:
     ///   - selectedMonth: date relevant to showing month, then you can extract the components
     ///   - content:
-    public init(interval: DateInterval, selectedMonth: Binding<Date>, mode: CalendarMode, @ViewBuilder content: @escaping (DateGridDate) -> DateView) {
+    public init(interval: DateInterval, scrollAxis: Axis = .horizontal, selectedMonth: Binding<Date>, mode: CalendarMode, @ViewBuilder content: @escaping (DateGridDate) -> DateView) {
         self.viewModel = .init(interval: interval, mode: mode)
         self._selectedMonth = selectedMonth
         self.content = content
+        self.scrollAxis = scrollAxis
     }
     
     //TODO: make Date generator class
     private let viewModel: DateGridViewModel
+    private var scrollAxis: Axis = .horizontal
     private let content: (DateGridDate) -> DateView
     @Binding var selectedMonth: Date
     
     public var body: some View {
-        
-        TabView(selection: $selectedMonth) {
-            
-            MonthsOrWeeks(viewModel: viewModel, content: content)
+        if scrollAxis == .horizontal {
+            TabView(selection: $selectedMonth) {
+                
+                MonthsOrWeeks(viewModel: viewModel, content: content)
+            }
+            .frame(height: viewModel.mode.estimateHeight, alignment: .center)
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+        }else {
+            TabView(selection: $selectedMonth) {
+                
+                MonthsOrWeeks(viewModel: viewModel, content: content).rotationEffect(.degrees(-90))
+            }.rotationEffect(.degrees(90), anchor: .topLeading)
+            .frame(height: viewModel.mode.estimateHeight, alignment: .center)
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
         }
-        .frame(height: viewModel.mode.estimateHeight, alignment: .center)
-        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+        
     }
     
     //MARK: constant and supportive methods
